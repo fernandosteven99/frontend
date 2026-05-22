@@ -10,13 +10,17 @@ function Navbar({ sections, activeSection, onSelect, userName, role }) {
     horarios: <FaCalendarAlt />,
     reportes: <FaChartBar />,
     dashboard: <FaTachometerAlt />,
+    clases: <FaCalendarAlt />,
+    asistencia: <FaChartBar />,
+    inscripciones: <FaUsers />,
+    notificaciones: <FaChartBar />,
+    perfil: <FaUserCircle />,
   };
 
   return (
     <div style={{
       background: "#1e3a5f",
       padding: "0 40px",
-      marginBottom: "0",
       boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
       width: "100%",
       boxSizing: "border-box",
@@ -24,14 +28,19 @@ function Navbar({ sections, activeSection, onSelect, userName, role }) {
     }}>
       <style>{`
         @media (max-width: 600px) {
-          .navbar-top { padding: 0 16px !important; }
-          .navbar-tabs { flex-wrap: wrap !important; padding: 4px 0 !important; }
-          .navbar-tab { flex: 0 0 50% !important; font-size: 12px !important; padding: 10px 4px !important; }
+          .navbar-outer { padding: 0 12px !important; }
           .navbar-logo { font-size: 15px !important; }
+          .navbar-tabs { flex-wrap: wrap !important; }
+          .navbar-tab {
+            flex: 0 0 calc(50% - 4px) !important;
+            font-size: 11px !important;
+            padding: 10px 2px !important;
+            gap: 4px !important;
+          }
         }
       `}</style>
 
-      <div className="navbar-top" style={{
+      <div className="navbar-outer" style={{
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -43,15 +52,12 @@ function Navbar({ sections, activeSection, onSelect, userName, role }) {
         </span>
 
         <div style={{ position: "relative" }}>
-          <div
-            onClick={() => setShowMenu(!showMenu)}
-            style={{
-              width: "40px", height: "40px", borderRadius: "50%",
-              background: "#4a6fa5", color: "white",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", border: "2px solid rgba(255,255,255,0.3)",
-            }}
-          >
+          <div onClick={() => setShowMenu(!showMenu)} style={{
+            width: "40px", height: "40px", borderRadius: "50%",
+            background: "#4a6fa5", display: "flex", alignItems: "center",
+            justifyContent: "center", cursor: "pointer",
+            border: "2px solid rgba(255,255,255,0.3)",
+          }}>
             <FaUserCircle size={24} color="white" />
           </div>
 
@@ -67,10 +73,6 @@ function Navbar({ sections, activeSection, onSelect, userName, role }) {
                 <p style={{ margin: 0, fontWeight: "700", color: "#1a202c" }}>{userName}</p>
                 <span style={{ fontSize: "12px", color: "#1e3a5f", fontWeight: "600", background: "#ebf8ff", padding: "2px 8px", borderRadius: "20px" }}>{role}</span>
               </div>
-              <button type="button" onClick={() => window.location.href = "/profile"}
-                style={{ width: "100%", padding: "10px 16px", background: "none", border: "none", textAlign: "left", cursor: "pointer", borderRadius: "8px", fontSize: "14px", color: "#1a202c", display: "flex", alignItems: "center", gap: "8px" }}>
-                <FaUserCircle color="#1e3a5f" /> Mi Perfil
-              </button>
               <button type="button" onClick={() => { localStorage.clear(); window.location.href = "/"; }}
                 style={{ width: "100%", padding: "10px 16px", background: "none", border: "none", textAlign: "left", cursor: "pointer", borderRadius: "8px", fontSize: "14px", color: "#e53e3e", display: "flex", alignItems: "center", gap: "8px" }}>
                 <FaSignOutAlt color="#e53e3e" /> Cerrar sesión
@@ -103,7 +105,6 @@ function Navbar({ sections, activeSection, onSelect, userName, role }) {
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
-              whiteSpace: "nowrap",
             }}
           >
             {icons[s.id]} {s.label.replace(/[^\w\s]/gi, '').trim()}
