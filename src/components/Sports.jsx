@@ -7,6 +7,8 @@ import Button from "./ui/Button";
 import AlertMessage from "./ui/AlertMessage";
 import LogoutButton from "./ui/LogoutButton";
 
+const API_URL = "https://backend-6jy7.onrender.com";
+
 function Sports() {
   const user = JSON.parse(localStorage.getItem("user"));
   const [sports, setSports] = useState([]);
@@ -15,17 +17,17 @@ function Sports() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`).then(r => r.json()).then(setSports);
+    fetch(`${API_URL}/sports`).then(r => r.json()).then(setSports);
   }, []);
 
   const handleSelectSport = (sport) => {
     setSelectedSport(sport);
     setMessage("");
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports/${sport.id}/schedules`).then(r => r.json()).then(setSchedules);
+    fetch(`${API_URL}/sports/${sport.id}/schedules`).then(r => r.json()).then(setSchedules);
   };
 
   const handleReserve = async (schedule_id) => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/reserve`, {
+    const response = await fetch(`${API_URL}/reserve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: user.id, schedule_id }),
