@@ -74,6 +74,10 @@ function Admin() {
   const [embedUrl, setEmbedUrl]           = useState("");
   const [activeEmbedUrl, setActiveEmbedUrl] = useState("");
 
+  // Dashboard filtros
+  const [dashFiltDia,      setDashFiltDia]      = useState("");
+  const [dashFiltDeporte,  setDashFiltDeporte]  = useState("");
+
   // ── Modal de correos ─────────────────────────────────────────────────────
   const [emailModal, setEmailModal] = useState(null);
   // emailModal = { type, payload, label, onConfirm }
@@ -600,71 +604,142 @@ function Admin() {
       )}
 
       {/* ── DASHBOARD ── */}
-      {section === "dashboard" && (
-        <>
-          <SectionTitle>📈 Dashboard Power BI</SectionTitle>
-          <p style={{ color: "#aaa", fontSize: "13px", marginBottom: "14px", marginTop: 0 }}>
-            Pega el enlace <code style={{ background: "rgba(255,255,255,0.08)", padding: "1px 7px", borderRadius: "4px", fontSize: "12px" }}>&lt;iframe&gt;</code> embed de Power BI para visualizar el tablero.
-          </p>
+      {section === "dashboard" && (() => {
+        const DIAS_DASH = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+        const COLORS    = ["#f7971e","#74c0fc","#51cf66","#f783ac","#ffd200","#a9e34b","#63e6be","#e599f7"];
 
-          <Card style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
-                  <rect width="40" height="40" rx="8" fill="#F2C811"/>
-                  <rect x="8" y="22" width="6" height="12" rx="1.5" fill="#1F1F1F"/>
-                  <rect x="17" y="14" width="6" height="20" rx="1.5" fill="#1F1F1F"/>
-                  <rect x="26" y="8" width="6" height="26" rx="1.5" fill="#1F1F1F"/>
-                </svg>
-                <span style={{ fontWeight: "bold", fontSize: "14px" }}>Reporte Power BI</span>
+        const schedFilt = schedules.filter(s =>
+          (!dashFiltDia     || s.day?.toLowerCase() === dashFiltDia.toLowerCase()) &&
+          (!dashFiltDeporte || (sports.find(sp => sp.id === s.sport_id)?.name || s.sport) === dashFiltDeporte)
+        );
+
+        const kpis = [
+          { label:"Usuarios",    value: users.length,       color:"#f7971e", icon:"👥" },
+          { label:"Deportes",    value: sports.length,      color:"#74c0fc", icon:"🏅" },
+          { label:"Horarios",    value: schedFilt.length,   color:"#51cf66", icon:"📅" },
+          { label:"Ubicaciones", value: locations.length,   color:"#f783ac", icon:"📍" },
+        ];
+
+        const roleMap  = { 1:"Admin", 2:"Estudiante", 3:"Instructor", 4:"Usuario" };
+        const byRole   = Object.entries(users.reduce((a,u)=>{ const r=roleMap[u.role_id]||`Rol ${u.role_id}`; a[r]=(a[r]||0)+1; return a; },{}));
+        const byDeporte= Object.entries(schedFilt.reduce((a,s)=>{ const n=sports.find(sp=>sp.id===s.sport_id)?.name||s.sport||"Otro"; a[n]=(a[n]||0)+1; return a; },{})).slice(0,6);
+        const byDia    = DIAS_DASH.map(d=>[d,schedFilt.filter(s=>s.day?.toLowerCase()===d.toLowerCase()).length]).filter(([,v])=>v>0);
+        const byCapDep = Object.entries(schedFilt.reduce((a,s)=>{ const n=sports.find(sp=>sp.id===s.sport_id)?.name||s.sport||"Otro"; a[n]=(a[n]||0)+(parseInt(s.capacity)||0); return a; },{})).slice(0,6);
+        const byLoc    = Object.entries(schedFilt.reduce((a,s)=>{ const loc=locations.find(l=>l[0]===s.location_id); a[loc?loc[1]:"Sin ubicación"]=(a[loc?loc[1]:"Sin ubicación"]||0)+1; return a; },{})).slice(0,6);
+        const byInst   = Object.entries(schedFilt.reduce((a,s)=>{ const i=instructors.find(i=>i.id===s.instructor_id); const n=i?i.nombre.split(" ")[0]:`ID ${s.instructor_id}`; a[n]=(a[n]||0)+1; return a; },{})).slice(0,6);
+
+        const Pie = ({ data, title }) => {
+          if (!data.length) return <div style={{textAlign:"center",color:"#444",fontSize:"12px",padding:"30px 0"}}>Sin datos</div>;
+          const total = data.reduce((a,[,v])=>a+v,0);
+          let ang = -Math.PI/2;
+          const slices = data.map(([lbl,val],i)=>{
+            const pct=val/total, a1=ang, a2=ang+pct*2*Math.PI; ang=a2;
+            const cx=85,cy=70,r=52, x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
+            const mid=(a1+a2)/2;
+            return { lbl,val,pct, path:`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${pct>0.5?1:0},1 ${x2},${y2} Z`,
+              color:COLORS[i%COLORS.length], lx:cx+(r+15)*Math.cos(mid), ly:cy+(r+15)*Math.sin(mid) };
+          });
+          return (
+            <div>
+              <p style={{textAlign:"center",fontSize:"11px",fontWeight:"bold",color:"#aaa",margin:"0 0 6px"}}>{title}</p>
+              <svg viewBox="0 0 170 140" style={{width:"100%",maxWidth:"180px",display:"block",margin:"0 auto"}}>
+                {slices.map((s,i)=><path key={i} d={s.path} fill={s.color} stroke="#0f2027" strokeWidth="1.5"/>)}
+                {slices.map((s,i)=> s.pct>0.08&&<text key={i} x={s.lx} y={s.ly} fill="white" fontSize="7" textAnchor="middle" dominantBaseline="middle" fontWeight="bold">{Math.round(s.pct*100)}%</text>)}
+              </svg>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"3px 8px",justifyContent:"center",marginTop:"6px"}}>
+                {slices.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:"3px",fontSize:"9px",color:"#888"}}><span style={{width:7,height:7,borderRadius:"50%",background:s.color,display:"inline-block",flexShrink:0}}/>{s.lbl} ({s.val})</div>)}
               </div>
-              <span style={{
-                fontSize: "11px", padding: "3px 12px", borderRadius: "20px", fontWeight: "bold",
-                background: activeEmbedUrl ? "rgba(81,207,102,0.15)" : "rgba(255,255,255,0.07)",
-                color: activeEmbedUrl ? "#51cf66" : "#666",
-              }}>
-                {activeEmbedUrl ? "● Activo" : "○ Sin reporte"}
-              </span>
             </div>
+          );
+        };
 
-            {activeEmbedUrl ? (
-              <iframe src={activeEmbedUrl} title="Power BI Dashboard" allowFullScreen
-                style={{ width: "100%", height: "600px", border: "none", display: "block" }} />
-            ) : (
-              <div style={{ height: "240px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", background: "rgba(0,0,0,0.1)" }}>
-                <svg width="48" height="48" viewBox="0 0 40 40" fill="none" style={{ opacity: 0.3 }}>
-                  <rect width="40" height="40" rx="8" fill="#F2C811"/>
-                  <rect x="8" y="22" width="6" height="12" rx="1.5" fill="#1F1F1F"/>
-                  <rect x="17" y="14" width="6" height="20" rx="1.5" fill="#1F1F1F"/>
-                  <rect x="26" y="8" width="6" height="26" rx="1.5" fill="#1F1F1F"/>
-                </svg>
-                <p style={{ color: "#555", fontSize: "13px", textAlign: "center", maxWidth: "300px", lineHeight: 1.6, margin: 0 }}>
-                  Ingresa la URL embed de tu tablero Power BI para visualizarlo aquí.<br/>
-                  <span style={{ fontSize: "11px", color: "#444" }}>Debe incluir 4 indicadores, 6 gráficos (3 circulares + 3 barras) y 2 filtros.</span>
-                </p>
+        const Bar = ({ data, title }) => {
+          if (!data.length) return <div style={{textAlign:"center",color:"#444",fontSize:"12px",padding:"30px 0"}}>Sin datos</div>;
+          const max=Math.max(...data.map(([,v])=>v),1);
+          const bw=Math.min(26,Math.floor(140/data.length)-4);
+          const totalW=data.length*(bw+4); const sx=(160-totalW)/2+16;
+          return (
+            <div>
+              <p style={{textAlign:"center",fontSize:"11px",fontWeight:"bold",color:"#aaa",margin:"0 0 6px"}}>{title}</p>
+              <svg viewBox="0 0 180 125" style={{width:"100%",maxWidth:"220px",display:"block",margin:"0 auto"}}>
+                <line x1="16" y1="8" x2="16" y2="90" stroke="#2a2a2a" strokeWidth="1"/>
+                <line x1="16" y1="90" x2="168" y2="90" stroke="#2a2a2a" strokeWidth="1"/>
+                {[0,0.5,1].map(p=><g key={p}><line x1="14" y1={90-p*78} x2="168" y2={90-p*78} stroke="#1a1a1a" strokeWidth="0.5"/><text x="13" y={90-p*78+3} fill="#444" fontSize="6" textAnchor="end">{Math.round(max*p)}</text></g>)}
+                {data.map(([lbl,val],i)=>{
+                  const x=sx+i*(bw+4), h=(val/max)*78, col=COLORS[i%COLORS.length], l=lbl.length>7?lbl.slice(0,7)+".":lbl;
+                  return <g key={i}><rect x={x} y={90-h} width={bw} height={h} fill={col} rx="2" opacity="0.9"/><text x={x+bw/2} y={86-h} fill="white" fontSize="7" textAnchor="middle" fontWeight="bold">{val}</text><text x={x+bw/2} y={100} fill="#555" fontSize="6" textAnchor="middle">{l}</text></g>;
+                })}
+              </svg>
+            </div>
+          );
+        };
+
+        const cg = {background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"12px",padding:"14px"};
+
+        return (
+          <>
+            <SectionTitle>📊 Dashboard del Sistema</SectionTitle>
+
+            {/* 2 Filtros */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"}}>
+              <div>
+                <label style={{fontSize:"11px",color:"#ffd200",display:"block",marginBottom:"5px",fontWeight:"bold"}}>🗓 Filtrar por día</label>
+                <select value={dashFiltDia} onChange={e=>setDashFiltDia(e.target.value)} style={selectActivo(dashFiltDia)}>
+                  <option value="">— Todos los días —</option>
+                  {DIAS_DASH.map(d=><option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{fontSize:"11px",color:"#ffd200",display:"block",marginBottom:"5px",fontWeight:"bold"}}>🏅 Filtrar por deporte</label>
+                <select value={dashFiltDeporte} onChange={e=>setDashFiltDeporte(e.target.value)} style={selectActivo(dashFiltDeporte)}>
+                  <option value="">— Todos los deportes —</option>
+                  {sports.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
+                </select>
+              </div>
+            </div>
+            {(dashFiltDia||dashFiltDeporte)&&(
+              <div style={{marginBottom:"14px",display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}>
+                {dashFiltDia&&<span style={{background:"rgba(247,151,30,0.15)",color:"#f7971e",padding:"2px 10px",borderRadius:"20px",fontSize:"10px"}}>📅 {dashFiltDia}</span>}
+                {dashFiltDeporte&&<span style={{background:"rgba(247,151,30,0.15)",color:"#f7971e",padding:"2px 10px",borderRadius:"20px",fontSize:"10px"}}>🏅 {dashFiltDeporte}</span>}
+                <button onClick={()=>{setDashFiltDia("");setDashFiltDeporte("");}} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"11px"}}>✕ Limpiar</button>
               </div>
             )}
 
-            <div style={{ display: "flex", gap: "8px", alignItems: "center", padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.15)" }}>
-              <span style={{ fontSize: "12px", color: "#888", whiteSpace: "nowrap" }}>URL embed:</span>
-              <input type="text" value={embedUrl} onChange={e => setEmbedUrl(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && setActiveEmbedUrl(embedUrl.trim())}
-                placeholder="https://app.powerbi.com/reportEmbed?reportId=..."
-                style={{ ...selectStyle, marginBottom: 0, fontSize: "12px", fontFamily: "monospace", flex: 1 }} />
-              <Button onClick={() => setActiveEmbedUrl(embedUrl.trim())} color="primary">Cargar</Button>
-              {activeEmbedUrl && (
-                <Button onClick={() => { setActiveEmbedUrl(""); setEmbedUrl(""); }} color="danger">✕</Button>
-              )}
+            {/* 4 KPIs */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"10px",marginBottom:"20px"}}>
+              {kpis.map(k=>(
+                <div key={k.label} style={{...cg,textAlign:"center"}}>
+                  <div style={{fontSize:"20px",marginBottom:"4px"}}>{k.icon}</div>
+                  <div style={{fontSize:"32px",fontWeight:"900",color:k.color,lineHeight:1}}>{k.value}</div>
+                  <div style={{fontSize:"10px",color:"#777",marginTop:"5px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{k.label}</div>
+                </div>
+              ))}
             </div>
-          </Card>
-        </>
-      )}
+
+            {/* 3 Circulares */}
+            <p style={{fontSize:"10px",color:"#444",fontWeight:"bold",letterSpacing:"1.5px",marginBottom:"10px",textTransform:"uppercase"}}>Gráficos Circulares</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"20px"}}>
+              <div style={cg}><Pie data={byRole}    title="Usuarios por rol"/></div>
+              <div style={cg}><Pie data={byDeporte} title="Horarios por deporte"/></div>
+              <div style={cg}><Pie data={byDia}     title="Horarios por día"/></div>
+            </div>
+
+            {/* 3 Barras */}
+            <p style={{fontSize:"10px",color:"#444",fontWeight:"bold",letterSpacing:"1.5px",marginBottom:"10px",textTransform:"uppercase"}}>Gráficos de Barras</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"24px"}}>
+              <div style={cg}><Bar data={byCapDep} title="Capacidad por deporte"/></div>
+              <div style={cg}><Bar data={byLoc}    title="Horarios por ubicación"/></div>
+              <div style={cg}><Bar data={byInst}   title="Horarios por instructor"/></div>
+            </div>
+          </>
+        );
+      })()}
 
       {/* ── MODAL DE CORREOS ── */}
       {emailModal && (() => {
-       const admins      = users.filter(u => u.role_id === 2);
         const profesores  = users.filter(u => u.role_id === 3);
-        const estudiantes = users.filter(u => u.role_id === 1);
+        const estudiantes = users.filter(u => u.role_id === 2 || u.role_id === 4);
+        const iStyle = { ...selectStyle, marginBottom: 0, marginTop: "6px", background: "#0d1f2d", borderColor: "rgba(255,255,255,0.1)" };
         return (
           <div style={{
             position: "fixed", inset: 0, zIndex: 1000,
@@ -680,65 +755,50 @@ function Admin() {
                 <span style={{ fontSize: "22px" }}>✉️</span>
                 <h3 style={{ margin: 0, fontSize: "16px", color: "#ffd200" }}>Notificar por correo</h3>
               </div>
-              <p style={{ margin: "0 0 18px", fontSize: "13px", color: "#aaa", paddingLeft: "32px" }}>
-                {emailModal.label}
-              </p>
-              <p style={{ margin: "0 0 16px", fontSize: "12px", color: "#666" }}>
-                Selecciona quiénes deben recibir la notificación. Deja en "Sin notificar" los que no apliquen.
+              <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#aaa", paddingLeft: "32px" }}>{emailModal.label}</p>
+              <p style={{ margin: "0 0 18px", fontSize: "12px", color: "#555", paddingLeft: "32px" }}>
+                Escribe o elige de la lista. Deja vacío lo que no aplique.
               </p>
 
-              {/* Admin */}
+              {/* Admin — solo input manual */}
               <div style={{ marginBottom: "14px" }}>
-                <label style={{ fontSize: "11px", color: "#f7971e", display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                  ⚙️ Admin
-                </label>
-                <select
+                <label style={{ fontSize: "11px", color: "#f7971e", display: "block", marginBottom: "5px", fontWeight: "bold" }}>⚙️ Admin — correo manual</label>
+                <input type="email" placeholder="correo@admin.com"
                   value={emailModal.emails.admin}
                   onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, admin: e.target.value } }))}
-                  style={{ ...selectStyle, marginBottom: 0 }}
-                >
-                  <option value="">— Sin notificar —</option>
-                  {admins.length > 0
-                    ? admins.map(u => <option key={u.id} value={u.email}>{u.nombre} {u.apellido} — {u.email}</option>)
-                    : user?.email && <option value={user.email}>{user.nombre} (tú) — {user.email}</option>
-                  }
-                </select>
+                  style={iStyle} />
               </div>
 
-              {/* Profesor */}
+              {/* Profesor — select + input */}
               <div style={{ marginBottom: "14px" }}>
-                <label style={{ fontSize: "11px", color: "#74c0fc", display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                  🧑‍🏫 Profesor / Instructor
-                </label>
-                <select
-                  value={emailModal.emails.profesor}
-                  onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, profesor: e.target.value } }))}
-                  style={{ ...selectStyle, marginBottom: 0 }}
-                >
-                  <option value="">— Sin notificar —</option>
+                <label style={{ fontSize: "11px", color: "#74c0fc", display: "block", marginBottom: "5px", fontWeight: "bold" }}>🧑‍🏫 Profesor / Instructor</label>
+                <select defaultValue="" onChange={e => { if (e.target.value) setEmailModal(m => ({ ...m, emails: { ...m.emails, profesor: e.target.value } })); }} style={{ ...selectStyle, marginBottom: 0 }}>
+                  <option value="">— Elegir de la lista —</option>
                   {profesores.map(u => <option key={u.id} value={u.email}>{u.nombre} {u.apellido} — {u.email}</option>)}
                 </select>
+                <input type="email" placeholder="o escribe el correo manualmente..."
+                  value={emailModal.emails.profesor}
+                  onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, profesor: e.target.value } }))}
+                  style={iStyle} />
               </div>
 
-              {/* Estudiante */}
+              {/* Estudiante — select + input */}
               <div style={{ marginBottom: "24px" }}>
-                <label style={{ fontSize: "11px", color: "#51cf66", display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                  🎓 Estudiante / Usuario
-                </label>
-                <select
-                  value={emailModal.emails.estudiante}
-                  onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, estudiante: e.target.value } }))}
-                  style={{ ...selectStyle, marginBottom: 0 }}
-                >
-                  <option value="">— Sin notificar —</option>
+                <label style={{ fontSize: "11px", color: "#51cf66", display: "block", marginBottom: "5px", fontWeight: "bold" }}>🎓 Estudiante / Usuario</label>
+                <select defaultValue="" onChange={e => { if (e.target.value) setEmailModal(m => ({ ...m, emails: { ...m.emails, estudiante: e.target.value } })); }} style={{ ...selectStyle, marginBottom: 0 }}>
+                  <option value="">— Elegir de la lista —</option>
                   {estudiantes.map(u => <option key={u.id} value={u.email}>{u.nombre} {u.apellido} — {u.email}</option>)}
                 </select>
+                <input type="email" placeholder="o escribe el correo manualmente..."
+                  value={emailModal.emails.estudiante}
+                  onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, estudiante: e.target.value } }))}
+                  style={iStyle} />
               </div>
 
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              <Button onClick={closeEmailModal} color="secondary" width="100%">Cancelar</Button>
-              <Button onClick={async () => { await emailModal.onConfirm(); closeEmailModal(); }} color="secondary" width="100%">Sin notificar</Button>
-              <Button onClick={handleEmailModalConfirm} color="primary" width="100%">✉️ Confirmar y enviar</Button>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <Button onClick={closeEmailModal} color="secondary" width="100%">Cancelar</Button>
+                <Button onClick={async () => { await emailModal.onConfirm(); closeEmailModal(); }} color="secondary" width="100%">Sin notificar</Button>
+                <Button onClick={handleEmailModalConfirm} color="primary" width="100%">✉️ Confirmar y enviar</Button>
               </div>
             </div>
           </div>
