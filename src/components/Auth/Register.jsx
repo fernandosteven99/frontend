@@ -2,6 +2,8 @@ import { useState } from "react";
 import RoleSelector from "../ui/RoleSelector";
 import AlertMessage from "../ui/AlertMessage";
 
+const API_URL = "https://backend-6jy7.onrender.com";
+
 function Register() {
   const [form, setForm] = useState({
     nombre: "", apellido: "", email: "", usuario: "", contrasena: "", role_id: 1,
@@ -12,14 +14,14 @@ function Register() {
   const roles = [
     { id: 1, label: "🎓 Estudiante" },
     { id: 2, label: "⚙️ Admin" },
-    { id: 3, label: "🏋️ Instructor" },
+    { id: 3, label: "🏋 Instructor" },
   ];
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleRegister = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/auth/register`, {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, role_id: parseInt(form.role_id) }),
