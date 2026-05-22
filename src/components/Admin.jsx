@@ -9,10 +9,12 @@ import LogoutButton from "./ui/LogoutButton";
 import Header from "./ui/Header";
 import Navbar from "./ui/Navbar";
 
+const API_URL = "https://backend-6jy7.onrender.com";
+
 // ── Helper: enviar notificación por correo al backend ──────────────────────
 const notifyEmail = async (type, payload) => {
   try {
-    await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/email/notify`, {
+    await fetch(`${API_URL}/email/notify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, ...payload }),
@@ -46,7 +48,6 @@ function Admin() {
   const user = JSON.parse(localStorage.getItem("user"));
   const [section, setSection] = useState("usuarios");
 
-  // Datos globales
   const [users, setUsers]           = useState([]);
   const [sports, setSports]         = useState([]);
   const [schedules, setSchedules]   = useState([]);
@@ -56,13 +57,11 @@ function Admin() {
   const [message, setMessage]       = useState("");
   const [msgType, setMsgType]       = useState("success");
 
-  // Nuevos deportes / horarios
   const [newSport, setNewSport]     = useState("");
   const [newSchedule, setNewSchedule] = useState({
     sport_id: "", day: "", time: "", capacity: "", location_id: "", instructor_id: ""
   });
 
-  // Reportes
   const [filtroDeporte, setFiltroDeporte]       = useState("");
   const [filtroInstructor, setFiltroInstructor] = useState("");
   const [filtroUbicacion, setFiltroUbicacion]   = useState("");
@@ -70,17 +69,13 @@ function Admin() {
   const [reporteData, setReporteData]           = useState(null);
   const [errorFiltro, setErrorFiltro]           = useState("");
 
-  // Power BI
   const [embedUrl, setEmbedUrl]           = useState("");
   const [activeEmbedUrl, setActiveEmbedUrl] = useState("");
 
-  // Dashboard filtros
   const [dashFiltDia,      setDashFiltDia]      = useState("");
   const [dashFiltDeporte,  setDashFiltDeporte]  = useState("");
 
-  // ── Modal de correos ─────────────────────────────────────────────────────
   const [emailModal, setEmailModal] = useState(null);
-  // emailModal = { type, payload, label, onConfirm }
 
   const openEmailModal = (label, type, payload, onConfirm) => {
     setEmailModal({ label, type, payload, onConfirm, emails: { admin: user?.email || "", profesor: "", estudiante: "" } });
@@ -94,24 +89,19 @@ function Admin() {
       emailModal.emails.profesor,
       emailModal.emails.estudiante,
     ].filter(e => e && e.trim() !== "");
-
-    // Ejecutar la acción original
     await emailModal.onConfirm();
-
-    // Enviar notificación a cada correo ingresado
     for (const correo of destinos) {
       await notifyEmail(emailModal.type, { ...emailModal.payload, admin_email: correo });
     }
     closeEmailModal();
   };
 
-  // ── Carga inicial ────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/`).then(r => r.json()).then(setUsers);
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`).then(r => r.json()).then(setSports);
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules`).then(r => r.json()).then(setSchedules);
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/locations/`).then(r => r.json()).then(setLocations);
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/roles/`).then(r => r.json()).then(setRoles);
+    fetch(`${API_URL}/users/`).then(r => r.json()).then(setUsers);
+    fetch(`${API_URL}/sports`).then(r => r.json()).then(setSports);
+    fetch(`${API_URL}/schedules`).then(r => r.json()).then(setSchedules);
+    fetch(`${API_URL}/locations/`).then(r => r.json()).then(setLocations);
+    fetch(`${API_URL}/roles/`).then(r => r.json()).then(setRoles);
   }, []);
 
   useEffect(() => {
@@ -124,15 +114,13 @@ function Admin() {
     setTimeout(() => setMessage(""), 4000);
   };
 
-  // ── Usuarios ─────────────────────────────────────────────────────────────
   const updateRole = async (id, role_id) => {
-    await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/${id}/role?role_id=${role_id}`, { method: "PUT" });
+    await fetch(`${API_URL}/users/${id}/role?role_id=${role_id}`, { method: "PUT" });
     const u = users.find(u => u.id === id);
     const rolAnterior = roles.find(r => r[0] === u?.role_id)?.[1] || "—";
     const rolNuevo    = roles.find(r => r[0] === parseInt(role_id))?.[1] || "—";
     setUsers(users.map(u => u.id === id ? { ...u, role_id: parseInt(role_id) } : u));
     showMsg("Rol actualizado");
-    // Notificación correo
     await notifyEmail("role_updated", {
       admin_email:   user?.email,
       user_nombre:   `${u?.nombre} ${u?.apellido}`,
@@ -149,16 +137,15 @@ function Admin() {
       "user_deleted",
       { user_nombre: `${u?.nombre} ${u?.apellido}`, user_email: u?.email },
       async () => {
-        await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/${id}`, { method: "DELETE" });
+        await fetch(`${API_URL}/users/${id}`, { method: "DELETE" });
         setUsers(prev => prev.filter(usr => usr.id !== id));
         showMsg("Usuario eliminado");
       }
     );
   };
 
-  // ── Deportes ─────────────────────────────────────────────────────────────
   const createSport = async () => {
-    const r = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`, {
+    const r = await fetch(`${API_URL}/sports`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newSport }),
@@ -166,7 +153,7 @@ function Admin() {
     const data = await r.json();
     showMsg(data.message);
     setNewSport("");
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`).then(r => r.json()).then(setSports);
+    fetch(`${API_URL}/sports`).then(r => r.json()).then(setSports);
   };
 
   const deleteSport = (id) => {
@@ -176,16 +163,15 @@ function Admin() {
       "sport_deleted",
       { sport_name: sport?.name || "—" },
       async () => {
-        await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports/${id}`, { method: "DELETE" });
+        await fetch(`${API_URL}/sports/${id}`, { method: "DELETE" });
         setSports(prev => prev.filter(s => s.id !== id));
         showMsg("Deporte eliminado");
       }
     );
   };
 
-  // ── Horarios ─────────────────────────────────────────────────────────────
   const createSchedule = async () => {
-    const r = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules`, {
+    const r = await fetch(`${API_URL}/schedules`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -198,7 +184,7 @@ function Admin() {
     });
     const data = await r.json();
     showMsg(data.message);
-    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules`).then(r => r.json()).then(setSchedules);
+    fetch(`${API_URL}/schedules`).then(r => r.json()).then(setSchedules);
   };
 
   const deleteSchedule = (id) => {
@@ -209,14 +195,13 @@ function Admin() {
       "schedule_deleted",
       { sport: s?.sport || "—", day: s?.day || "—", time: s?.time || "—", location: loc ? loc[1] : "—" },
       async () => {
-        await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules/${id}`, { method: "DELETE" });
+        await fetch(`${API_URL}/schedules/${id}`, { method: "DELETE" });
         setSchedules(prev => prev.filter(sc => sc.id !== id));
         showMsg("Horario eliminado");
       }
     );
   };
 
-  // ── Reportes ─────────────────────────────────────────────────────────────
   const buscarReporte = () => {
     if (!filtroDeporte && !filtroInstructor && !filtroUbicacion && !filtroDia) {
       setErrorFiltro("⚠️ Selecciona al menos un filtro para buscar.");
@@ -247,12 +232,11 @@ function Admin() {
       Día:        filtroDia        || null,
     };
 
-    // Abrir modal para confirmar destinatarios antes de enviar correo
     openEmailModal(
       "Reporte generado",
       "report_generated",
       { admin_nombre: user?.nombre, total_registros: resultado.length, filtros: filtrosObj },
-      async () => {} // acción vacía, el correo lo envía handleEmailModalConfirm
+      async () => {}
     );
   };
 
@@ -318,7 +302,6 @@ function Admin() {
     drawHeader();
     let y = 36;
 
-    // Bloque filtros
     doc.setFillColor(32, 58, 67);
     doc.roundedRect(10, y, pageW - 20, 16, 2, 2, "F");
     doc.setTextColor(247, 151, 30); doc.setFontSize(9); doc.setFont("helvetica", "bold");
@@ -326,7 +309,6 @@ function Admin() {
     doc.setFont("helvetica", "normal"); doc.setTextColor(220, 220, 220);
     doc.text(filtrosTexto.length > 0 ? filtrosTexto.join("   |   ") : "Sin filtros", 16, y + 12);
 
-    // Tarjetas estadísticas
     y += 22;
     const totalCap   = reporteData.reduce((a, r) => a + (parseInt(r.capacity) || 0), 0);
     const depUnicos  = [...new Set(reporteData.map(r => r.sportName))].length;
@@ -348,7 +330,6 @@ function Admin() {
       doc.text(c.label, cx + cw / 2, y + 16, { align: "center" });
     });
 
-    // Tabla
     doc.autoTable({
       startY: y + 24,
       head: [["#", "Deporte", "Instructor", "Ubicación", "Día", "Hora", "Capacidad"]],
@@ -368,10 +349,9 @@ function Admin() {
   };
 
   const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-  const sections = ["usuarios", "deportes", "horarios", "reportes", "dashboard"];
 
   return (
-<PageWrapper>
+    <PageWrapper>
       <Navbar
         sections={[
           { id: "usuarios", label: "👥 Usuarios" },
@@ -389,7 +369,6 @@ function Admin() {
 
       <AlertMessage message={message} type={msgType} />
 
-      {/* ── USUARIOS ── */}
       {section === "usuarios" && (
         <>
           <SectionTitle>Gestión de Usuarios</SectionTitle>
@@ -411,7 +390,6 @@ function Admin() {
         </>
       )}
 
-      {/* ── DEPORTES ── */}
       {section === "deportes" && (
         <>
           <SectionTitle>Gestión de Deportes</SectionTitle>
@@ -428,7 +406,6 @@ function Admin() {
         </>
       )}
 
-      {/* ── HORARIOS ── */}
       {section === "horarios" && (
         <>
           <SectionTitle>Gestión de Horarios</SectionTitle>
@@ -437,35 +414,27 @@ function Admin() {
               <option value="">Selecciona deporte</option>
               {sports.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-
-            {/* FIX UBICACIONES: usa l[0] como key/value y l[1] como label */}
             <select value={newSchedule.location_id} onChange={e => setNewSchedule({ ...newSchedule, location_id: e.target.value })} style={selectStyle}>
               <option value="">Selecciona ubicación</option>
               {locations.map(l => <option key={l[0]} value={l[0]}>{l[1]}</option>)}
             </select>
-
             <select value={newSchedule.instructor_id} onChange={e => setNewSchedule({ ...newSchedule, instructor_id: e.target.value })} style={selectStyle}>
               <option value="">Selecciona instructor</option>
               {instructors.map(i => <option key={i.id} value={i.id}>{i.nombre} {i.apellido}</option>)}
             </select>
-
             <Input placeholder="Día (ej: Lunes)" value={newSchedule.day} onChange={e => setNewSchedule({ ...newSchedule, day: e.target.value })} />
             <input type="time" value={newSchedule.time} onChange={e => setNewSchedule({ ...newSchedule, time: e.target.value })} style={selectStyle} />
             <Input placeholder="Capacidad" type="number" value={newSchedule.capacity} onChange={e => setNewSchedule({ ...newSchedule, capacity: e.target.value })} />
             <Button onClick={createSchedule} color="primary" width="100%">+ AGREGAR HORARIO</Button>
           </div>
-
           {schedules.map(s => {
-            // Resolver nombre de ubicación para mostrar en la lista
             const loc = locations.find(l => l[0] === s.location_id);
             const locNombre = loc ? loc[1] : s.location_id ? `ID ${s.location_id}` : "—";
             return (
               <Card key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: "bold" }}>📅 {s.sport} — {s.day} {s.time}</p>
-                  <p style={{ margin: 0, color: "#aaa", fontSize: "13px" }}>
-                    Capacidad: {s.capacity} | 📍 {locNombre}
-                  </p>
+                  <p style={{ margin: 0, color: "#aaa", fontSize: "13px" }}>Capacidad: {s.capacity} | 📍 {locNombre}</p>
                 </div>
                 <Button onClick={() => deleteSchedule(s.id)} color="danger">🗑</Button>
               </Card>
@@ -474,55 +443,44 @@ function Admin() {
         </>
       )}
 
-      {/* ── REPORTES ── */}
       {section === "reportes" && (
         <>
           <SectionTitle>📊 Módulo de Reportes</SectionTitle>
           <p style={{ color: "#aaa", fontSize: "13px", marginBottom: "16px", marginTop: 0 }}>
-            Selecciona los filtros y genera el reporte en PDF. Se enviará una notificación por correo al generarlo.
+            Selecciona los filtros y genera el reporte en PDF.
           </p>
-
-          {/* Filtros */}
           <Card style={{ marginBottom: "16px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-
               <div>
                 <label style={{ fontSize: "12px", color: "#ffd200", display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                  🏅 Deporte
-                  {filtroDeporte && <span style={{ fontSize: "10px", background: "rgba(247,151,30,0.2)", color: "#f7971e", padding: "1px 7px", borderRadius: "20px" }}>✓</span>}
+                  🏅 Deporte {filtroDeporte && <span style={{ fontSize: "10px", background: "rgba(247,151,30,0.2)", color: "#f7971e", padding: "1px 7px", borderRadius: "20px" }}>✓</span>}
                 </label>
                 <select value={filtroDeporte} onChange={e => setFiltroDeporte(e.target.value)} style={selectActivo(filtroDeporte)}>
                   <option value="" disabled>— Elige un deporte —</option>
                   {sports.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                 </select>
               </div>
-
               <div>
                 <label style={{ fontSize: "12px", color: "#ffd200", display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                  🧑‍🏫 Instructor
-                  {filtroInstructor && <span style={{ fontSize: "10px", background: "rgba(247,151,30,0.2)", color: "#f7971e", padding: "1px 7px", borderRadius: "20px" }}>✓</span>}
+                  🧑‍🏫 Instructor {filtroInstructor && <span style={{ fontSize: "10px", background: "rgba(247,151,30,0.2)", color: "#f7971e", padding: "1px 7px", borderRadius: "20px" }}>✓</span>}
                 </label>
                 <select value={filtroInstructor} onChange={e => setFiltroInstructor(e.target.value)} style={selectActivo(filtroInstructor)}>
                   <option value="" disabled>— Elige un instructor —</option>
                   {instructors.map(i => <option key={i.id} value={i.id}>{i.nombre} {i.apellido}</option>)}
                 </select>
               </div>
-
               <div>
                 <label style={{ fontSize: "12px", color: "#ffd200", display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                  📍 Ubicación
-                  {filtroUbicacion && <span style={{ fontSize: "10px", background: "rgba(247,151,30,0.2)", color: "#f7971e", padding: "1px 7px", borderRadius: "20px" }}>✓</span>}
+                  📍 Ubicación {filtroUbicacion && <span style={{ fontSize: "10px", background: "rgba(247,151,30,0.2)", color: "#f7971e", padding: "1px 7px", borderRadius: "20px" }}>✓</span>}
                 </label>
                 <select value={filtroUbicacion} onChange={e => setFiltroUbicacion(e.target.value)} style={selectActivo(filtroUbicacion)}>
                   <option value="" disabled>— Elige una ubicación —</option>
                   {locations.map(l => <option key={l[0]} value={l[1]}>{l[1]}</option>)}
                 </select>
               </div>
-
               <div>
                 <label style={{ fontSize: "12px", color: "#ffd200", display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                  📅 Día
-                  {filtroDia && <span style={{ fontSize: "10px", background: "rgba(247,151,30,0.2)", color: "#f7971e", padding: "1px 7px", borderRadius: "20px" }}>✓</span>}
+                  📅 Día {filtroDia && <span style={{ fontSize: "10px", background: "rgba(247,151,30,0.2)", color: "#f7971e", padding: "1px 7px", borderRadius: "20px" }}>✓</span>}
                 </label>
                 <select value={filtroDia} onChange={e => setFiltroDia(e.target.value)} style={selectActivo(filtroDia)}>
                   <option value="" disabled>— Elige un día —</option>
@@ -530,19 +488,14 @@ function Admin() {
                 </select>
               </div>
             </div>
-
             {errorFiltro && <p style={{ color: "#ff6b6b", fontSize: "13px", marginTop: "12px", marginBottom: 0 }}>{errorFiltro}</p>}
-
             <div style={{ display: "flex", gap: "10px", marginTop: "16px", flexWrap: "wrap" }}>
               <Button onClick={buscarReporte} color="primary">🔍 Buscar</Button>
               <Button onClick={limpiarReporte} color="secondary">✕ Limpiar</Button>
-              {reporteData?.length > 0 && (
-                <Button onClick={exportarPDF} color="danger">📄 Exportar PDF</Button>
-              )}
+              {reporteData?.length > 0 && <Button onClick={exportarPDF} color="danger">📄 Exportar PDF</Button>}
             </div>
           </Card>
 
-          {/* Estado vacío */}
           {reporteData === null && !errorFiltro && (
             <p style={{ textAlign: "center", color: "#555", padding: "24px 0", fontSize: "14px" }}>
               Selecciona al menos un filtro y presiona <strong style={{ color: "#ffd200" }}>Buscar</strong>.
@@ -553,16 +506,14 @@ function Admin() {
               ⚠️ No se encontraron resultados con los filtros seleccionados.
             </p>
           )}
-
-          {/* Resultados */}
           {reporteData?.length > 0 && (
             <>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px,1fr))", gap: "10px", marginBottom: "16px" }}>
                 {[
-                  { label: "Horarios",    value: reporteData.length,                                                              color: "#ffd200" },
-                  { label: "Capacidad",   value: reporteData.reduce((a, r) => a + (parseInt(r.capacity) || 0), 0),                color: "#51cf66" },
-                  { label: "Deportes",    value: [...new Set(reporteData.map(r => r.sportName))].length,                          color: "#74c0fc" },
-                  { label: "Instructores",value: [...new Set(reporteData.map(r => r.instructor_id))].length,                      color: "#f783ac" },
+                  { label: "Horarios",     value: reporteData.length, color: "#ffd200" },
+                  { label: "Capacidad",    value: reporteData.reduce((a, r) => a + (parseInt(r.capacity) || 0), 0), color: "#51cf66" },
+                  { label: "Deportes",     value: [...new Set(reporteData.map(r => r.sportName))].length, color: "#74c0fc" },
+                  { label: "Instructores", value: [...new Set(reporteData.map(r => r.instructor_id))].length, color: "#f783ac" },
                 ].map(m => (
                   <Card key={m.label} style={{ textAlign: "center", padding: "14px" }}>
                     <div style={{ fontSize: "24px", fontWeight: "bold", color: m.color }}>{m.value}</div>
@@ -570,7 +521,6 @@ function Admin() {
                   </Card>
                 ))}
               </div>
-
               <div style={{ overflowX: "auto", marginBottom: "30px" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                   <thead>
@@ -599,11 +549,9 @@ function Admin() {
               </div>
             </>
           )}
-
         </>
       )}
 
-      {/* ── DASHBOARD ── */}
       {section === "dashboard" && (() => {
         const DIAS_DASH = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
         const COLORS    = ["#f7971e","#74c0fc","#51cf66","#f783ac","#ffd200","#a9e34b","#63e6be","#e599f7"];
@@ -679,8 +627,6 @@ function Admin() {
         return (
           <>
             <SectionTitle>📊 Dashboard del Sistema</SectionTitle>
-
-            {/* 2 Filtros */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"}}>
               <div>
                 <label style={{fontSize:"11px",color:"#ffd200",display:"block",marginBottom:"5px",fontWeight:"bold"}}>🗓 Filtrar por día</label>
@@ -704,8 +650,6 @@ function Admin() {
                 <button onClick={()=>{setDashFiltDia("");setDashFiltDeporte("");}} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"11px"}}>✕ Limpiar</button>
               </div>
             )}
-
-            {/* 4 KPIs */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"10px",marginBottom:"20px"}}>
               {kpis.map(k=>(
                 <div key={k.label} style={{...cg,textAlign:"center"}}>
@@ -715,16 +659,12 @@ function Admin() {
                 </div>
               ))}
             </div>
-
-            {/* 3 Circulares */}
             <p style={{fontSize:"10px",color:"#444",fontWeight:"bold",letterSpacing:"1.5px",marginBottom:"10px",textTransform:"uppercase"}}>Gráficos Circulares</p>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"20px"}}>
               <div style={cg}><Pie data={byRole}    title="Usuarios por rol"/></div>
               <div style={cg}><Pie data={byDeporte} title="Horarios por deporte"/></div>
               <div style={cg}><Pie data={byDia}     title="Horarios por día"/></div>
             </div>
-
-            {/* 3 Barras */}
             <p style={{fontSize:"10px",color:"#444",fontWeight:"bold",letterSpacing:"1.5px",marginBottom:"10px",textTransform:"uppercase"}}>Gráficos de Barras</p>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"24px"}}>
               <div style={cg}><Bar data={byCapDep} title="Capacidad por deporte"/></div>
@@ -735,66 +675,39 @@ function Admin() {
         );
       })()}
 
-      {/* ── MODAL DE CORREOS ── */}
       {emailModal && (() => {
         const profesores  = users.filter(u => u.role_id === 3);
         const estudiantes = users.filter(u => u.role_id === 2 || u.role_id === 4);
         const iStyle = { ...selectStyle, marginBottom: 0, marginTop: "6px", background: "#0d1f2d", borderColor: "rgba(255,255,255,0.1)" };
         return (
-          <div style={{
-            position: "fixed", inset: 0, zIndex: 1000,
-            background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
-          }}>
-            <div style={{
-              background: "#0f2027", border: "1px solid rgba(247,151,30,0.3)",
-              borderRadius: "16px", padding: "28px", width: "100%", maxWidth: "460px",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-            }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+            <div style={{ background: "#0f2027", border: "1px solid rgba(247,151,30,0.3)", borderRadius: "16px", padding: "28px", width: "100%", maxWidth: "460px", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
                 <span style={{ fontSize: "22px" }}>✉️</span>
                 <h3 style={{ margin: 0, fontSize: "16px", color: "#ffd200" }}>Notificar por correo</h3>
               </div>
               <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#aaa", paddingLeft: "32px" }}>{emailModal.label}</p>
-              <p style={{ margin: "0 0 18px", fontSize: "12px", color: "#555", paddingLeft: "32px" }}>
-                Escribe o elige de la lista. Deja vacío lo que no aplique.
-              </p>
-
-              {/* Admin — solo input manual */}
+              <p style={{ margin: "0 0 18px", fontSize: "12px", color: "#555", paddingLeft: "32px" }}>Escribe o elige de la lista. Deja vacío lo que no aplique.</p>
               <div style={{ marginBottom: "14px" }}>
                 <label style={{ fontSize: "11px", color: "#f7971e", display: "block", marginBottom: "5px", fontWeight: "bold" }}>⚙️ Admin — correo manual</label>
-                <input type="email" placeholder="correo@admin.com"
-                  value={emailModal.emails.admin}
-                  onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, admin: e.target.value } }))}
-                  style={iStyle} />
+                <input type="email" placeholder="correo@admin.com" value={emailModal.emails.admin} onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, admin: e.target.value } }))} style={iStyle} />
               </div>
-
-              {/* Profesor — select + input */}
               <div style={{ marginBottom: "14px" }}>
                 <label style={{ fontSize: "11px", color: "#74c0fc", display: "block", marginBottom: "5px", fontWeight: "bold" }}>🧑‍🏫 Profesor / Instructor</label>
                 <select defaultValue="" onChange={e => { if (e.target.value) setEmailModal(m => ({ ...m, emails: { ...m.emails, profesor: e.target.value } })); }} style={{ ...selectStyle, marginBottom: 0 }}>
                   <option value="">— Elegir de la lista —</option>
                   {profesores.map(u => <option key={u.id} value={u.email}>{u.nombre} {u.apellido} — {u.email}</option>)}
                 </select>
-                <input type="email" placeholder="o escribe el correo manualmente..."
-                  value={emailModal.emails.profesor}
-                  onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, profesor: e.target.value } }))}
-                  style={iStyle} />
+                <input type="email" placeholder="o escribe el correo manualmente..." value={emailModal.emails.profesor} onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, profesor: e.target.value } }))} style={iStyle} />
               </div>
-
-              {/* Estudiante — select + input */}
               <div style={{ marginBottom: "24px" }}>
                 <label style={{ fontSize: "11px", color: "#51cf66", display: "block", marginBottom: "5px", fontWeight: "bold" }}>🎓 Estudiante / Usuario</label>
                 <select defaultValue="" onChange={e => { if (e.target.value) setEmailModal(m => ({ ...m, emails: { ...m.emails, estudiante: e.target.value } })); }} style={{ ...selectStyle, marginBottom: 0 }}>
                   <option value="">— Elegir de la lista —</option>
                   {estudiantes.map(u => <option key={u.id} value={u.email}>{u.nombre} {u.apellido} — {u.email}</option>)}
                 </select>
-                <input type="email" placeholder="o escribe el correo manualmente..."
-                  value={emailModal.emails.estudiante}
-                  onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, estudiante: e.target.value } }))}
-                  style={iStyle} />
+                <input type="email" placeholder="o escribe el correo manualmente..." value={emailModal.emails.estudiante} onChange={e => setEmailModal(m => ({ ...m, emails: { ...m.emails, estudiante: e.target.value } }))} style={iStyle} />
               </div>
-
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 <Button onClick={closeEmailModal} color="secondary" width="100%">Cancelar</Button>
                 <Button onClick={async () => { await emailModal.onConfirm(); closeEmailModal(); }} color="secondary" width="100%">Sin notificar</Button>
@@ -806,7 +719,7 @@ function Admin() {
       })()}
 
       <LogoutButton />
-       </div>
+      </div>
     </PageWrapper>
   );
 }
