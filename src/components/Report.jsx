@@ -15,8 +15,8 @@ function Report() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/sports").then(r => r.json()).then(setSports);
-    fetch("http://127.0.0.1:8000/roles/").then(r => r.json()).then(setRoles);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`).then(r => r.json()).then(setSports);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/roles/`).then(r => r.json()).then(setRoles);
   }, []);
 
   const handleSearch = async () => {
@@ -25,7 +25,7 @@ function Report() {
     if (filters.day) params.append("day", filters.day);
     if (filters.role_id) params.append("role_id", filters.role_id);
 
-    const response = await fetch(`http://127.0.0.1:8000/reports/inscriptions?${params}`);
+    const response = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/reports/inscriptions?${params}`);
     const data = await response.json();
     setResults(data);
     if (data.length === 0) setMessage("No se encontraron resultados");

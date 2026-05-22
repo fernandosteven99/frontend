@@ -15,17 +15,17 @@ function Sports() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/sports").then(r => r.json()).then(setSports);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`).then(r => r.json()).then(setSports);
   }, []);
 
   const handleSelectSport = (sport) => {
     setSelectedSport(sport);
     setMessage("");
-    fetch(`http://127.0.0.1:8000/sports/${sport.id}/schedules`).then(r => r.json()).then(setSchedules);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports/${sport.id}/schedules`).then(r => r.json()).then(setSchedules);
   };
 
   const handleReserve = async (schedule_id) => {
-    const response = await fetch("http://127.0.0.1:8000/reserve", {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/reserve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: user.id, schedule_id }),

@@ -25,14 +25,14 @@ function Student() {
   };
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/student/${user.id}/inscriptions`).then(r => r.json()).then(setInscriptions);
-    fetch(`http://127.0.0.1:8000/student/${user.id}/attendance`).then(r => r.json()).then(setAttendance);
-    fetch(`http://127.0.0.1:8000/student/${user.id}/notifications`).then(r => r.json()).then(setNotifications);
-    fetch(`http://127.0.0.1:8000/student/${user.id}/profile`).then(r => r.json()).then(setProfile);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/student/${user.id}/inscriptions`).then(r => r.json()).then(setInscriptions);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/student/${user.id}/attendance`).then(r => r.json()).then(setAttendance);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/student/${user.id}/notifications`).then(r => r.json()).then(setNotifications);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/student/${user.id}/profile`).then(r => r.json()).then(setProfile);
   }, [user.id]);
 
   const cancelInscription = async (reservation_id, schedule_id) => {
-    const r = await fetch(`http://127.0.0.1:8000/student/${user.id}/cancel/${reservation_id}`, { method: "DELETE" });
+    const r = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/student/${user.id}/cancel/${reservation_id}`, { method: "DELETE" });
     const data = await r.json();
     if (r.ok) {
       setInscriptions(inscriptions.filter(i => i.reservation_id !== reservation_id));
@@ -48,7 +48,7 @@ function Student() {
       return;
     }
     const r = await fetch(
-      `http://127.0.0.1:8000/student/${user.id}/password?contrasena_actual=${passwords.actual}&contrasena_nueva=${passwords.nueva}`,
+      `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/student/${user.id}/password?contrasena_actual=${passwords.actual}&contrasena_nueva=${passwords.nueva}`,
       { method: "PUT" }
     );
     const data = await r.json();

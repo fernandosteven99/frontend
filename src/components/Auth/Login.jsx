@@ -17,7 +17,7 @@ function Login() {
   const handleLogin = async () => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/auth/login?credencial=${credencial}&contrasena=${contrasena}&role_id=${roleId}`,
+        `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/auth/login?credencial=${credencial}&contrasena=${contrasena}&role_id=${roleId}`,
         { method: "POST" }
       );
       const data = await response.json();

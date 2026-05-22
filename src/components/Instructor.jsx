@@ -16,14 +16,14 @@ function Instructor() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/schedules/instructor/${user.id}`)
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules/instructor/${user.id}`)
       .then(r => r.json()).then(setSchedules);
   }, [user.id]);
 
   const handleSelectSchedule = (schedule) => {
     setSelectedSchedule(schedule);
     setMessage("");
-    fetch(`http://127.0.0.1:8000/schedules/${schedule.id}/students`)
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules/${schedule.id}/students`)
       .then(r => r.json())
       .then(data => {
         setStudents(data);
@@ -35,7 +35,7 @@ function Instructor() {
 
   const handleSaveAll = async () => {
     for (const student of students) {
-      await fetch("http://127.0.0.1:8000/attendance", {
+      await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/attendance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reservation_id: student.reservation_id, status: attendance[student.reservation_id] }),

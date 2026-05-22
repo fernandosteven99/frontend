@@ -12,7 +12,7 @@ import Navbar from "./ui/Navbar";
 // ── Helper: enviar notificación por correo al backend ──────────────────────
 const notifyEmail = async (type, payload) => {
   try {
-    await fetch("http://127.0.0.1:8000/email/notify", {
+    await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/email/notify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, ...payload }),
@@ -107,11 +107,11 @@ function Admin() {
 
   // ── Carga inicial ────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/users/").then(r => r.json()).then(setUsers);
-    fetch("http://127.0.0.1:8000/sports").then(r => r.json()).then(setSports);
-    fetch("http://127.0.0.1:8000/schedules").then(r => r.json()).then(setSchedules);
-    fetch("http://127.0.0.1:8000/locations/").then(r => r.json()).then(setLocations);
-    fetch("http://127.0.0.1:8000/roles/").then(r => r.json()).then(setRoles);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/`).then(r => r.json()).then(setUsers);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`).then(r => r.json()).then(setSports);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules`).then(r => r.json()).then(setSchedules);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/locations/`).then(r => r.json()).then(setLocations);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/roles/`).then(r => r.json()).then(setRoles);
   }, []);
 
   useEffect(() => {
@@ -126,7 +126,7 @@ function Admin() {
 
   // ── Usuarios ─────────────────────────────────────────────────────────────
   const updateRole = async (id, role_id) => {
-    await fetch(`http://127.0.0.1:8000/users/${id}/role?role_id=${role_id}`, { method: "PUT" });
+    await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/${id}/role?role_id=${role_id}`, { method: "PUT" });
     const u = users.find(u => u.id === id);
     const rolAnterior = roles.find(r => r[0] === u?.role_id)?.[1] || "—";
     const rolNuevo    = roles.find(r => r[0] === parseInt(role_id))?.[1] || "—";
@@ -149,7 +149,7 @@ function Admin() {
       "user_deleted",
       { user_nombre: `${u?.nombre} ${u?.apellido}`, user_email: u?.email },
       async () => {
-        await fetch(`http://127.0.0.1:8000/users/${id}`, { method: "DELETE" });
+        await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/${id}`, { method: "DELETE" });
         setUsers(prev => prev.filter(usr => usr.id !== id));
         showMsg("Usuario eliminado");
       }
@@ -158,7 +158,7 @@ function Admin() {
 
   // ── Deportes ─────────────────────────────────────────────────────────────
   const createSport = async () => {
-    const r = await fetch("http://127.0.0.1:8000/sports", {
+    const r = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newSport }),
@@ -166,7 +166,7 @@ function Admin() {
     const data = await r.json();
     showMsg(data.message);
     setNewSport("");
-    fetch("http://127.0.0.1:8000/sports").then(r => r.json()).then(setSports);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports`).then(r => r.json()).then(setSports);
   };
 
   const deleteSport = (id) => {
@@ -176,7 +176,7 @@ function Admin() {
       "sport_deleted",
       { sport_name: sport?.name || "—" },
       async () => {
-        await fetch(`http://127.0.0.1:8000/sports/${id}`, { method: "DELETE" });
+        await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/sports/${id}`, { method: "DELETE" });
         setSports(prev => prev.filter(s => s.id !== id));
         showMsg("Deporte eliminado");
       }
@@ -185,7 +185,7 @@ function Admin() {
 
   // ── Horarios ─────────────────────────────────────────────────────────────
   const createSchedule = async () => {
-    const r = await fetch("http://127.0.0.1:8000/schedules", {
+    const r = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -198,7 +198,7 @@ function Admin() {
     });
     const data = await r.json();
     showMsg(data.message);
-    fetch("http://127.0.0.1:8000/schedules").then(r => r.json()).then(setSchedules);
+    fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules`).then(r => r.json()).then(setSchedules);
   };
 
   const deleteSchedule = (id) => {
@@ -209,7 +209,7 @@ function Admin() {
       "schedule_deleted",
       { sport: s?.sport || "—", day: s?.day || "—", time: s?.time || "—", location: loc ? loc[1] : "—" },
       async () => {
-        await fetch(`http://127.0.0.1:8000/schedules/${id}`, { method: "DELETE" });
+        await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/schedules/${id}`, { method: "DELETE" });
         setSchedules(prev => prev.filter(sc => sc.id !== id));
         showMsg("Horario eliminado");
       }
