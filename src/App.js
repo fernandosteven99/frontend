@@ -4,19 +4,19 @@ import Register from "./components/Auth/Register";
 import Sports from "./components/Sports";
 import Instructor from "./components/Instructor";
 import Admin from "./components/Admin";
-import Report from "./components/Report";
 import Student from "./components/Student";
+import ChatWidget from "./components/ChatWidget";
 
 function App() {
   return (
     <BrowserRouter>
+      <ChatWidget />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/sports" element={<Sports />} />
         <Route path="/instructor" element={<Instructor />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/reports" element={<Report />} />
         <Route path="/student" element={<Student />} />
       </Routes>
     </BrowserRouter>
