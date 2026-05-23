@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaFutbol, FaUsers, FaCalendarAlt, FaChartBar, FaTachometerAlt, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
+import { FaFutbol, FaUsers, FaCalendarAlt, FaChartBar, FaTachometerAlt, FaSignOutAlt, FaUserCircle, FaEnvelope } from "react-icons/fa";
 
 function Navbar({ sections, activeSection, onSelect, userName, role }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -13,7 +13,7 @@ function Navbar({ sections, activeSection, onSelect, userName, role }) {
     clases: <FaCalendarAlt />,
     asistencia: <FaChartBar />,
     inscripciones: <FaUsers />,
-    notificaciones: <FaChartBar />,
+    notificaciones: <FaEnvelope />,
     perfil: <FaUserCircle />,
   };
 
@@ -73,6 +73,10 @@ function Navbar({ sections, activeSection, onSelect, userName, role }) {
                 <p style={{ margin: 0, fontWeight: "700", color: "#1a202c" }}>{userName}</p>
                 <span style={{ fontSize: "12px", color: "#1e3a5f", fontWeight: "600", background: "#ebf8ff", padding: "2px 8px", borderRadius: "20px" }}>{role}</span>
               </div>
+              <button type="button" onClick={() => window.location.href = "/messages"}
+                style={{ width: "100%", padding: "10px 16px", background: "none", border: "none", textAlign: "left", cursor: "pointer", borderRadius: "8px", fontSize: "14px", color: "#1a202c", display: "flex", alignItems: "center", gap: "8px" }}>
+                <FaEnvelope color="#1e3a5f" /> Mensajes
+              </button>
               <button type="button" onClick={() => { localStorage.clear(); window.location.href = "/"; }}
                 style={{ width: "100%", padding: "10px 16px", background: "none", border: "none", textAlign: "left", cursor: "pointer", borderRadius: "8px", fontSize: "14px", color: "#e53e3e", display: "flex", alignItems: "center", gap: "8px" }}>
                 <FaSignOutAlt color="#e53e3e" /> Cerrar sesión
@@ -90,21 +94,15 @@ function Navbar({ sections, activeSection, onSelect, userName, role }) {
             className="navbar-tab"
             onClick={() => onSelect(s.id)}
             style={{
-              flex: 1,
-              padding: "12px 0",
-              border: "none",
+              flex: 1, padding: "12px 0", border: "none",
               background: "transparent",
               color: activeSection === s.id ? "white" : "rgba(255,255,255,0.7)",
               cursor: "pointer",
               fontWeight: activeSection === s.id ? "700" : "400",
-              fontSize: "14px",
-              transition: "all 0.2s",
+              fontSize: "14px", transition: "all 0.2s",
               borderBottom: activeSection === s.id ? "3px solid #ffd200" : "3px solid transparent",
-              textAlign: "center",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
+              textAlign: "center", display: "flex", alignItems: "center",
+              justifyContent: "center", gap: "6px",
             }}
           >
             {icons[s.id]} {s.label.replace(/[^\w\s]/gi, '').trim()}
