@@ -1,5 +1,3 @@
-import ChatWidget from "../ChatWidget";
-
 function PageWrapper({ children }) {
   return (
     <div style={{
@@ -10,7 +8,6 @@ function PageWrapper({ children }) {
       padding: "0"
     }}>
       {children}
-      <ChatWidget />
     </div>
   );
 }
