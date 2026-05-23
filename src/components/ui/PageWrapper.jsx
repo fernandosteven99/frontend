@@ -1,4 +1,6 @@
-function PageWrapper({ children, maxWidth = "700px" }) {
+import ChatWidget from "../ChatWidget";
+
+function PageWrapper({ children }) {
   return (
     <div style={{
       minHeight: "100vh",
@@ -8,6 +10,7 @@ function PageWrapper({ children, maxWidth = "700px" }) {
       padding: "0"
     }}>
       {children}
+      <ChatWidget />
     </div>
   );
 }
