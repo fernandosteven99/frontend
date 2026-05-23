@@ -5,6 +5,7 @@ import Sports from "./components/Sports";
 import Instructor from "./components/Instructor";
 import Admin from "./components/Admin";
 import Student from "./components/Student";
+import Messages from "./components/Messages";
 import ChatWidget from "./components/ChatWidget";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/instructor" element={<Instructor />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/student" element={<Student />} />
+        <Route path="/messages" element={<Messages />} />
       </Routes>
     </BrowserRouter>
   );
